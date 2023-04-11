@@ -94,6 +94,118 @@ public class Model extends Observable {
         setChanged();
     }
 
+    public boolean northTilt() {
+        boolean moved = false;
+
+        for (int i = 0; i < board.size(); i++) {
+            int goal = board.size()-1;
+            for (int j = goal-1; j >= 0; j--){
+                boolean merge = false;
+                Tile t = board.tile(i, j);
+                if (t == null) continue;
+
+                while (board.tile(i, goal) != null && t.value() != board.tile(i, goal).value() && goal > j)
+                    goal--;
+
+                if (goal == j) continue;
+
+                if (board.tile(i, goal) != null && t.value() == board.tile(i, goal).value()) {
+                    score += 2 * t.value();
+                    merge = true;
+                }
+                board.move(i, goal, t);
+                moved = true;
+                if (merge)
+                    goal--;
+            }
+        }
+        return moved;
+    }
+
+    public boolean eastTilt() {
+        boolean moved = false;
+
+        for (int j = 0; j < board.size(); j++) {
+            int goal = board.size()-1;
+            for (int i = goal-1; i >= 0; i--){
+                boolean merge = false;
+                Tile t = board.tile(i, j);
+                if (t == null) continue;
+
+                while (board.tile(goal, j) != null && t.value() != board.tile(goal, j).value() && goal > i)
+                    goal--;
+
+                if (goal == i) continue;
+
+                if (board.tile(goal, j) != null && t.value() == board.tile(goal, j).value()) {
+                    score += 2 * t.value();
+                    merge = true;
+                }
+                board.move(goal, j, t);
+                moved = true;
+                if (merge)
+                    goal--;
+            }
+        }
+        return  moved;
+    }
+
+    public boolean westTilt() {
+        boolean moved = false;
+
+        for (int j = 0; j < board.size(); j++) {
+            int goal = 0;
+            for (int i = goal+1; i < board.size(); i++){
+                boolean merge = false;
+                Tile t = board.tile(i, j);
+                if (t == null) continue;
+
+                while (board.tile(goal, j) != null && t.value() != board.tile(goal, j).value() && goal < i)
+                    goal++;
+
+                if (goal == i) continue;
+
+                if (board.tile(goal, j) != null && t.value() == board.tile(goal, j).value()) {
+                    score += 2 * t.value();
+                    merge = true;
+                }
+                board.move(goal, j, t);
+                moved = true;
+                if (merge)
+                    goal++;
+            }
+        }
+        return moved;
+    }
+
+    public boolean southTilt() {
+        boolean moved = false;
+
+        for (int i = 0; i < board.size(); i++) {
+            int goal = 0;
+            for (int j = goal+1; j < board.size(); j++){
+                boolean merge = false;
+                Tile t = board.tile(i, j);
+                if (t == null) continue;
+
+                while (board.tile(i, goal) != null && t.value() != board.tile(i, goal).value() && goal < j)
+                    goal++;
+
+                if (goal == j) continue;
+
+                if (board.tile(i, goal) != null && t.value() == board.tile(i, goal).value()) {
+                    score += 2 * t.value();
+                    merge = true;
+                }
+                board.move(i, goal, t);
+                moved = true;
+                if (merge)
+                    goal++;
+            }
+        }
+        return moved;
+    }
+
     /** Tilt the board toward SIDE. Return true iff this changes the board.
      *
      * 1. If two Tile objects are adjacent in the direction of motion and have
@@ -113,6 +225,23 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        if (!atLeastOneMoveExists(board))
+            return  changed;
+
+        switch (side) {
+            case NORTH:
+                changed = northTilt();
+                break;
+            case EAST:
+                changed = eastTilt();
+                break;
+            case WEST:
+                changed = westTilt();
+                break;
+            case SOUTH:
+                changed = southTilt();
+                break;
+        }
 
         checkGameOver();
         if (changed) {
@@ -138,6 +267,10 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++)
+            for (int j = 0; j < b.size(); j++)
+                if (b.tile(i, j) == null) return true;
+
         return false;
     }
 
@@ -148,7 +281,22 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++)
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null) continue;
+                else if (b.tile(i, j).value() == MAX_PIECE) return true;
+            }
+
         return false;
+    }
+
+    public static boolean near_sim(Board b, int x, int y) {
+        int num = b.tile(x, y).value();
+        if (x + 1 < b.size() && num == b.tile(x + 1, y).value()) return true;
+        else if (y + 1 < b.size() && num == b.tile(x, y + 1).value()) return true;
+        else if (x - 1 >= 0 && num == b.tile(x - 1, y).value()) return true;
+        else if (y - 1 >= 0 && num == b.tile(x, y - 1).value()) return true;
+        else return false;
     }
 
     /**
@@ -159,6 +307,12 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) return true;
+
+        for (int i = 0; i < b.size(); i++)
+            for (int j = 0; j < b.size(); j++)
+                if (near_sim(b, i, j)) return true;
+
         return false;
     }
 
